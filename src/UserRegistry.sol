@@ -6,8 +6,9 @@ contract UserRegistry {
         address wallet;
         string nickname;
         bool isRegistered;
-        
     }
+
+    //testing
 
     mapping(address => User) public users;
 
@@ -25,7 +26,7 @@ contract UserRegistry {
         emit UserRegistered(msg.sender);
     }
 
-     function updateNickname(string memory newNickname) public {
+    function updateNickname(string memory newNickname) public {
         require(!users[msg.sender].isRegistered, "No estas registrado");
 
         users[msg.sender].nickname = newNickname;
@@ -34,5 +35,4 @@ contract UserRegistry {
     function isUserRegistered(address _wallet) public view returns (bool) {
         return users[_wallet].isRegistered;
     }
-
 }

@@ -1,13 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+pragma solidity ^0.8.26;
 
 contract Cuchubal {
     address public creator;
     uint256 public startDate;
     uint256 public contributionAmount;
-    uint256 public frequency;
     uint256 public participantCount;
     string public name;
     uint256 public endDate;
@@ -15,9 +12,9 @@ contract Cuchubal {
     uint256 public penaltyQuotaPercentage;
     uint256 public totalContributionsRequired;
     uint256 public minimumQuota;
-    mapping(address => uint256) public contributions; // Keep this declaration
+    mapping(address => uint256) public contributions;
     mapping(address => uint256) public lastContributionTime;
-
+    
     address[] public participants;
     mapping(address => bool) public isParticipant;
     mapping(address => bool) public invitations;
@@ -26,7 +23,6 @@ contract Cuchubal {
 
     event ParticipantInvited(address indexed participant);
     event ParticipantAccepted(address indexed participant);
-    //event ParticipantJoinedWithCode(address indexed participant);
     event ContributionMade(address indexed participant, uint256 amount);
     event RewardDistributed(address indexed participant, uint256 amount);
     event PenaltyApplied(address indexed participant, uint256 amount);
@@ -35,27 +31,24 @@ contract Cuchubal {
         address _creator,
         uint256 _startDate,
         uint256 _contributionAmount,
-        uint256 _frequency,
         uint256 _participantCount,
         string memory _name,
-        uint256 _endDate,
         uint256 _penaltyPercentage,
         uint256 _penaltyQuotaPercentage,
-        //total contributions required
         uint256 _totalContributionsRequired
     ) {
         creator = _creator;
         startDate = _startDate;
         contributionAmount = _contributionAmount;
-        frequency = _frequency;
         participantCount = _participantCount;
         name = _name;
-        endDate = _endDate;
         penaltyPercentage = _penaltyPercentage;
         penaltyQuotaPercentage = _penaltyQuotaPercentage;
-        totalContributionsRequired = _contributionAmount * (_endDate - _startDate) / _frequency;
+        totalContributionsRequired = _totalContributionsRequired;
+        endDate = _startDate + (_participantCount * 1 weeks); // Calcular la fecha de finalización
     }
 
+    //Invitar participantes a mi cuchubal
     function inviteParticipant(address participant) public {
         require(msg.sender == creator, "Only the creator can invite participants");
         require(participants.length < participantCount, "Participant limit reached");
@@ -75,48 +68,41 @@ contract Cuchubal {
         emit ParticipantAccepted(msg.sender);
     }
 
-    /*function generateInvitationCode() public {
-        require(msg.sender == creator, "Only the creator can generate the invitation code");
-        require(!codeGenerated, "Invitation code already generated");
-
-        // Generating a simple invitation code (could be more complex)
-        invitationCode = keccak256(abi.encodePacked(block.timestamp, creator));
-        codeGenerated = true;
-    }*/
-
-    /*function joinWithCode(string memory code) public {
-        require(
-            keccak256(abi.encodePacked(code)) == keccak256(abi.encodePacked(invitationCode)), "Invalid invitation code"
-        );
-        require(participants.length < participantCount, "Participant limit reached");
-        require(!isParticipant[msg.sender], "Address already a participant");
-
-        participants.push(msg.sender);
-        isParticipant[msg.sender] = true;
-
-        emit ParticipantJoinedWithCode(msg.sender);
-    }*/
-
-    //Contribuciones USDC/BASESC
-
-    address private constant USDC_ADDRESS = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913; 
-    IERC20 private usdc = IERC20(USDC_ADDRESS);
-
-    function viewContributionStatus() public view returns (uint256) {
-        return contributions[msg.sender];
+    //Funcion para ver resumen de participación
+    struct Contribution {
+        uint256 amount;
+        uint256 timestamp;
     }
 
-    function makeContribution(uint256 amount) public {
+    mapping(address => Contribution[]) public participantContributions;
+
+    function viewParticipantSummary(address participant, address cuchubalAddress)
+        public
+        view
+        returns (Contribution[] memory)
+    {
+        Cuchubal cuchubal = Cuchubal(cuchubalAddress);
+        require(cuchubal.isParticipant(participant), "El participante no pertenece a este Cuchubal");
+
+        return participantContributions[participant];
+    }
+    
+    function contribute() external payable {
         require(isParticipant[msg.sender], "Solo los participantes pueden contribuir");
-        require(amount >= minimumQuota, "La contribucion es menor que la cuota minima");
-        require(contributions[msg.sender] + amount <= totalContributionsRequired, "El total de contribuciones excede el limite");
-        require(amount <= totalContributionsRequired - contributions[msg.sender], "Monto de contribucion invalido");
+        require(msg.value >= minimumQuota, "La contribucion es menor que la cuota minima");
+        require(
+            contributions[msg.sender] + msg.value <= totalContributionsRequired,
+            "El total de contribuciones excede el limite"
+        );
+        require(
+            msg.value <= totalContributionsRequired - contributions[msg.sender],
+            "Monto de contribucion es mayor a la cantidad ingresada"
+        );
+        //require(block.timestamp >= startDate && block.timestamp <= endDate, "Contribución fuera del período válido");
 
-        require(usdc.transferFrom(msg.sender, address(this), amount), "Fallo la transferencia de USDC");
-
-        contributions[msg.sender] += amount;
+        contributions[msg.sender] += msg.value;
         lastContributionTime[msg.sender] = block.timestamp;
 
-        emit ContributionMade(msg.sender, amount);
+        emit ContributionMade(msg.sender, msg.value);
     }
 }
