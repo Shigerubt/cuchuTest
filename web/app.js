@@ -1,25 +1,41 @@
-document.getElementById('contributeButton').addEventListener('click', async () => {
-    if (typeof window.ethereum !== 'undefined') {
-        try {
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const signer = provider.getSigner();
-            const contractAddress = 'YOUR_CONTRACT_ADDRESS_HERE';
-            const contractABI = [
-                // Insert your contract's ABI here
-                "function contribute() external payable"
-            ];
-            const contract = new ethers.Contract(contractAddress, contractABI, signer);
+import React from 'react';
+import ReactDOM from 'react-dom';
+import {
+  ThirdwebProvider,
+  ConnectButton,
+} from "thirdweb/react";
+import {
+  createWallet,
+  walletConnect,
+  inAppWallet,
+} from "thirdweb/wallets";
 
-            const amount = ethers.utils.parseEther(document.getElementById('amount').value);
-            const tx = await contract.contribute({ value: amount });
-            await tx.wait();
-
-            alert('Contribution successful!');
-        } catch (error) {
-            console.error(error);
-            alert('An error occurred. Please check the console for details.');
-        }
-    } else {
-        alert('Please install MetaMask!');
-    }
+// Assuming you have a clientId for Thirdweb
+const client = createThirdwebClient({
+  clientId: "YOUR_CLIENT_ID",
 });
+
+// Your existing app logic here, wrapped in a functional component
+function App() {
+  return (
+    <div>
+      <h1>My DApp</h1>
+      <ConnectButton />
+      <div>
+        <input id="amount" type="text" placeholder="Amount to Contribute" />
+        <button id="contributeButton">Contribute</button>
+      </div>
+    </div>
+  );
+}
+
+// Wrap your App component with ThirdwebProvider
+ReactDOM.render(
+  <ThirdwebProvider
+    client={client}
+    supportedWallets={[createWallet(), walletConnect(), inAppWallet()]}
+  >
+    <App />
+  </ThirdwebProvider>,
+  document.getElementById('root')
+);
