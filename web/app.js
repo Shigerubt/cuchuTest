@@ -7,35 +7,37 @@ import {
 import {
   createWallet,
   walletConnect,
-  inAppWallet,
+  createThirdwebClient,
 } from "thirdweb/wallets";
 
-// Assuming you have a clientId for Thirdweb
 const client = createThirdwebClient({
   clientId: "YOUR_CLIENT_ID",
 });
 
-// Your existing app logic here, wrapped in a functional component
-function App() {
+const wallets = [
+  createWallet("io.metamask"),
+  createWallet("com.coinbase.wallet"),
+  walletConnect(),
+];
+
+export default function App() {
   return (
-    <div>
-      <h1>My DApp</h1>
-      <ConnectButton />
+    <ThirdwebProvider client={client}>
       <div>
-        <input id="amount" type="text" placeholder="Amount to Contribute" />
-        <button id="contributeButton">Contribute</button>
+        <h1>My DApp</h1>
+        <ConnectButton
+          wallets={wallets}
+          theme={"dark"}
+          connectModal={{ size: "compact" }}
+        />
+        <div>
+          <input id="amount" type="text" placeholder="Amount to Contribute" />
+          <button id="contributeButton">Contribute</button>
+        </div>
       </div>
-    </div>
+    </ThirdwebProvider>
   );
 }
 
-// Wrap your App component with ThirdwebProvider
-ReactDOM.render(
-  <ThirdwebProvider
-    client={client}
-    supportedWallets={[createWallet(), walletConnect(), inAppWallet()]}
-  >
-    <App />
-  </ThirdwebProvider>,
-  document.getElementById('root')
-);
+// Render the App component to the DOM
+ReactDOM.render(<App />, document.getElementById('root'));
