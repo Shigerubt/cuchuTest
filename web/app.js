@@ -1,42 +1,46 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { BrowserRouter as Router, Route, Switch, Link } from 'react-router-dom';
 import { ThirdwebProvider, ConnectButton } from "thirdweb/react";
 import { ethers } from 'ethers';
-import {
-  createWallet,
-  walletConnect,
-  createThirdwebClient,
-} from "thirdweb/wallets";
 
-// Anvil's default RPC URL
-const anvilRpcUrl = "http://localhost:8545";
+// Import your smart contract interaction component
+import MyContractInteraction from './MyContractInteraction';
 
-// Create an ethers provider using Anvil's RPC URL
-const provider = new ethers.providers.JsonRpcProvider(anvilRpcUrl);
+const client = {/* Your Thirdweb client setup */};
+const wallets = [/* Your wallets setup */];
 
-const client = createThirdwebClient({
-  clientId: "YOUR_CLIENT_ID",
-  provider: provider, // Use the ethers provider to connect to the Anvil local node
-  chainId: 1, // Anvil mimics Ethereum's mainnet by default (1). Adjust based on your Anvil configuration.
-});
-
-const wallets = [
-  createWallet("io.metamask"),
-  createWallet("com.coinbase.wallet"),
-  walletConnect(),
-];
-
-export default function App() {
+function App() {
   return (
     <ThirdwebProvider client={client}>
-      <div>
-        <h1>My DApp</h1>
-        <ConnectButton wallets={wallets} theme={"dark"} connectModal={{ size: "compact" }} />
-        {/* Your DApp components */}
-      </div>
+      <Router>
+        <div>
+          <nav>
+            <ul>
+              <li>
+                <Link to="/">Home</Link>
+              </li>
+              <li>
+                <Link to="/interact">Interact with Contract</Link>
+              </li>
+            </ul>
+          </nav>
+          <Switch>
+            <Route path="/interact">
+              <MyContractInteraction />
+            </Route>
+            <Route path="/">
+              <div>
+                <h1>My DApp</h1>
+                <ConnectButton wallets={wallets} theme={"dark"} connectModal={{ size: "compact" }} />
+                {/* Additional home page components */}
+              </div>
+            </Route>
+          </Switch>
+        </div>
+      </Router>
     </ThirdwebProvider>
   );
 }
 
-// Assuming you have an element with id 'root' in your HTML
 ReactDOM.render(<App />, document.getElementById('root'));
