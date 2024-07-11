@@ -12,18 +12,14 @@ contract UserRegistry {
 
     mapping(address => User) public users;
 
-    event UserRegistered(address indexed wallet);
+    event UserRegistered(address indexed wallet, string nickname);
 
-    function registerUser() public {
-        require(!users[msg.sender].isRegistered, "Ya estas registrado");
+   function registerUser(string memory nickname) public {
+        require(!users[msg.sender].isRegistered, "User already registered.");
 
-        users[msg.sender] = User({
-            wallet: msg.sender,
-            nickname: "", // Cual es tu nickname?
-            isRegistered: true
-        });
+        users[msg.sender] = User(msg.sender, nickname, true);
 
-        emit UserRegistered(msg.sender);
+        emit UserRegistered(msg.sender, nickname);
     }
 
     function updateNickname(string memory newNickname) public {
